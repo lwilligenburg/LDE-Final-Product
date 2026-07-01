@@ -9,7 +9,7 @@ import math
 
 import pytest
 
-from flight_deck import (
+from back_end import (
     ChoiceMetric,
     Impact,
     LevelMetric,
@@ -160,7 +160,7 @@ def test_unknown_metric_id_raises():
 
 
 def test_real_board_builds_and_runs():
-    from flight_deck import build_simulation
+    from back_end import build_simulation
     sim = build_simulation(include_examples=True)
     r = sim.evaluate()  # all defaults; TODO zeros -> should not crash
     assert 0.0 <= r.composite <= 100.0

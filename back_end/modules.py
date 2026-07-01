@@ -39,12 +39,86 @@ from .scoring import Normalization, ScoreWeights
 # noted in each comment. Replace every 0.0 marked TODO with your figures.
 # ---------------------------------------------------------------------------
 
-MODULES: list[LevelMetric] = [
-    # MOD 01 · Circular Materials · Materials Digital Passport
-    # slider: Pilot -> EU Mandate  |  target metric: EOL recovery rate <= 20%
+# PERCENTAGE METRIC
+# A continuous 0-100% slider
+# Impact interpolates from 0% to 100%; 
+# Everything scales from nothing at 0% up to the level you set for 100%.
+
+# LEVEL METRIC
+# A metric for a discrete set of options, e.g. Low / Med / High
+
+# CHOICE METRIC
+# Pick: An unordered discrete pick — e.g. the policy instrument used to drive change.
+# Dropdown: A technology-choice dropdown — e.g. SAF / H2 / Electric / Other.
+
+# ---------------------------------------------------------------------------
+
+MODULES: list[LevelMetric, PercentageMetric, ChoiceMetric] = [
+
+    # MOD 01 - CO2 cuts - SAF
+    PercentageMetric(
+        id="saf_co2_cuts",
+        label="SAF CO2 Cuts (%)",
+        impact_at_0=Impact(),
+        impact_at_100=Impact(
+            co2_saved_kt=0.0,   # TODO: CO2e avoided at a 100% blend ceiling
+            cost_meur=0.0,      # TODO
+            returns_meur=0.0,   # TODO
+            years=0.0,          # TODO
+        ),
+        default_pct=50.0,       # board shows the cuts at 50%
+    ),
+
+    # MOD 02 - Time to 100% SAF  - SAF
+    PercentageMetric(
+        id="saf_time_to_100",
+        label="Time to 100% SAF (% vol)",
+        impact_at_0=Impact(),
+        impact_at_100=Impact(
+            co2_saved_kt=0.0,   # TODO: CO2e avoided at a 100% blend ceiling
+            cost_meur=0.0,      # TODO
+            returns_meur=0.0,   # TODO
+            years=0.0,          # TODO
+        ),
+        default_pct=50.0,       # board shows the cuts at 50%
+    ),
+
+    # MOD 03 - Willngness to contribute financially  - SAF
+    PercentageMetric(
+        id="saf_WTC",
+        label="Willingness to contribute financially (% premium accepted)",
+        impact_at_0=Impact(),
+        impact_at_100=Impact(
+            co2_saved_kt=0.0,   # TODO: CO2e avoided at a 100% blend ceiling
+            cost_meur=0.0,      # TODO
+            returns_meur=0.0,   # TODO
+            years=0.0,          # TODO
+        ),
+        default_pct=50.0,       # board shows the cuts at 50%
+    ),
+
+    # MOD 04 - PLACEHOLDER
+    # MOD 05 - PLACEHOLDER
+    # MOD 06 - PLACEHOLDER
+
+    # MOD 07 - Data Depth  - Digital Passport
+    PercentageMetric(
+        id="passport_digital_depth",
+        label="Digital Deptth (%)",
+        impact_at_0=Impact(),
+        impact_at_100=Impact(
+            co2_saved_kt=0.0,   # TODO: CO2e avoided at a 100% blend ceiling
+            cost_meur=0.0,      # TODO
+            returns_meur=0.0,   # TODO
+            years=0.0,          # TODO
+        ),
+        default_pct=50.0,       # board shows the cuts at 50%
+    ),
+    
+    # MOD 08 - Regulatory Support - Digital Passport
     LevelMetric(
-        id="circular_materials",
-        label="Circular Materials — Materials Digital Passport",
+        id="passport_reg_support",
+        label="Regulatory Support",
         impact_at_min=Impact(),  # level 1 (Pilot): baseline
         impact_at_max=Impact(
             co2_saved_kt=0.0,     # TODO: CO2e avoided at EU-Mandate level
@@ -53,125 +127,63 @@ MODULES: list[LevelMetric] = [
             years=0.0,            # TODO: years to deliver / break even
         ),
     ),
-    # MOD 02 · SAF Supply Chain · EU SAF Feedstock Regulation
-    # slider: Status Quo -> Full Reform  |  target: verified SAF feedstock < 40%
-    LevelMetric(
-        id="saf_supply_chain",
-        label="SAF Supply Chain — EU SAF Feedstock Regulation",
-        impact_at_min=Impact(),
-        impact_at_max=Impact(
-            co2_saved_kt=0.0,     # TODO
-            cost_meur=0.0,        # TODO
-            returns_meur=0.0,     # TODO
-            years=0.0,            # TODO
-        ),
-    ),
-    # MOD 03 · SAF Blend Limits · SAF Blend Limit Strategy
-    # slider: Blend Wall -> Full Certification  |  target: SAF blend ceiling 50%
-    LevelMetric(
-        id="saf_blend_limits",
-        label="SAF Blend Limits — SAF Blend Limit Strategy",
-        impact_at_min=Impact(),
-        impact_at_max=Impact(
-            co2_saved_kt=0.0,     # TODO
-            cost_meur=0.0,        # TODO
-            returns_meur=0.0,     # TODO
-            years=0.0,            # TODO
-        ),
-    ),
-    # MOD 04 · TRM Guideline · Dynamic Technology Roadmap
-    # slider: Static Roadmap -> Adaptive TRM  |  target: policy adoption rate < 10%
-    LevelMetric(
-        id="trm_guideline",
-        label="TRM Guideline — Dynamic Technology Roadmap",
-        impact_at_min=Impact(),
-        impact_at_max=Impact(
-            co2_saved_kt=0.0,     # TODO
-            cost_meur=0.0,        # TODO
-            returns_meur=0.0,     # TODO
-            years=0.0,            # TODO
-        ),
-    ),
-    # MOD 05 · TRM Application · DTRM Platform
-    # slider: Siloed Tools -> Unified Platform  |  target: stakeholder integration < 10%
-    LevelMetric(
-        id="trm_application",
-        label="TRM Application — DTRM Platform",
-        impact_at_min=Impact(),
-        impact_at_max=Impact(
-            co2_saved_kt=0.0,     # TODO
-            cost_meur=0.0,        # TODO
-            returns_meur=0.0,     # TODO
-            years=0.0,            # TODO
-        ),
-    ),
-    # MOD 06 · Transition Framework · Participatory Backcasting
-    # slider: Uncoordinated -> Sector-Wide  |  target: sector coordination < 15%
-    LevelMetric(
-        id="transition_framework",
-        label="Transition Framework — Participatory Backcasting",
-        impact_at_min=Impact(),
-        impact_at_max=Impact(
-            co2_saved_kt=0.0,     # TODO
-            cost_meur=0.0,        # TODO
-            returns_meur=0.0,     # TODO
-            years=0.0,            # TODO
-        ),
-    ),
-    # MOD 07 · Predictive Maintenance · Bio-Inspired SHM Systems
-    # slider: Passive Sensors -> Predictive AI  |  target: maintenance prediction rate < 5%
-    LevelMetric(
-        id="predictive_maintenance",
-        label="Predictive Maintenance — Bio-Inspired SHM Systems",
-        impact_at_min=Impact(),
-        impact_at_max=Impact(
-            co2_saved_kt=0.0,     # TODO
-            cost_meur=0.0,        # TODO
-            returns_meur=0.0,     # TODO
-            years=0.0,            # TODO
-        ),
-    ),
-    # MOD 08 · Freight Sustainability · Environmental Freight Metrics
-    # slider: Cost/Time Only -> Full ESG Weight  |  target: green mode shift < 5%
-    LevelMetric(
-        id="freight_sustainability",
-        label="Freight Sustainability — Environmental Freight Metrics",
-        impact_at_min=Impact(),
-        impact_at_max=Impact(
-            co2_saved_kt=0.0,     # TODO
-            cost_meur=0.0,        # TODO
-            returns_meur=0.0,     # TODO
-            years=0.0,            # TODO
-        ),
-    ),
-    # MOD 09 · Competition Law · EU Level Playing Field
-    # slider: Distorted Market -> Level Playing Field  |  target: market equity index < 20%
-    LevelMetric(
-        id="competition_law",
-        label="Competition Law — EU Level Playing Field",
-        impact_at_min=Impact(),
-        impact_at_max=Impact(
-            co2_saved_kt=0.0,     # TODO
-            cost_meur=0.0,        # TODO
-            returns_meur=0.0,     # TODO
-            years=0.0,            # TODO
-        ),
-    ),
-]
 
+    # MOD 09 - Industry Adoption - Materials Digital Passport
+    LevelMetric(
+        id="passport_adoption",
+        label="Industry Adoption",
+        impact_at_min=Impact(),  # level 1 (Pilot): baseline
+        impact_at_max=Impact(
+            co2_saved_kt=0.0,     # TODO: CO2e avoided at EU-Mandate level
+            cost_meur=0.0,        # TODO
+            returns_meur=0.0,     # TODO
+            years=0.0,            # TODO: years to deliver / break even
+        ),
+    ),
 
-# ---------------------------------------------------------------------------
-# Examples of the OTHER control types, in case a module is a slider or dropdown
-# rather than the 1-5 ambition control. Copy the pattern into MODULES as needed.
-# ---------------------------------------------------------------------------
+    # MOD 10 - Funding payback period - Emission Guide & Eco-label
+    LevelMetric(
+        id="EGE_payback_period",
+        label="Funding Payback Period (years)",
+        impact_at_min=Impact(),  # level 1 (Pilot): baseline
+        impact_at_max=Impact(
+            co2_saved_kt=0.0,     # TODO: CO2e avoided at EU-Mandate level
+            cost_meur=0.0,        # TODO
+            returns_meur=0.0,     # TODO
+            years=0.0,            # TODO: years to deliver / break even
+        ),
+    ),
 
-EXTRA_EXAMPLE_METRICS = [
-    # A continuous 0-100% slider — e.g. how high to push the SAF blend ceiling.
-    # Impact interpolates from 0% to 100%; here everything scales from nothing at
-    # 0% up to the level you set for 100%.
+    # MOD 11 - Global Participation (incl. eco-labels) - Emission Guide & Eco-label
+    LevelMetric(
+        id="EGE_participation",
+        label="Global Participation (incl. Eco-labels)",
+        impact_at_min=Impact(),  # level 1 (Pilot): baseline
+        impact_at_max=Impact(
+            co2_saved_kt=0.0,     # TODO: CO2e avoided at EU-Mandate level
+            cost_meur=0.0,        # TODO
+            returns_meur=0.0,     # TODO
+            years=0.0,            # TODO: years to deliver / break even
+        ),
+    ),
+
+    # MOD 12 - Market trust in label - Emission Guide & Eco-label
+    LevelMetric(
+        id="EGE_market_trust",
+        label="Market Trust in Label",
+        impact_at_min=Impact(),  # level 1 (Pilot): baseline
+        impact_at_max=Impact(
+            co2_saved_kt=0.0,     # TODO: CO2e avoided at EU-Mandate level
+            cost_meur=0.0,        # TODO
+            returns_meur=0.0,     # TODO
+            years=0.0,            # TODO: years to deliver / break even
+        ),
+    ),
+
+    # MOD 13 - Sustainability mode shift  - Transport of Aircraft Elements
     PercentageMetric(
-        id="saf_blend_ceiling_pct",
-        label="SAF blend ceiling (%)",
+        id="transport_mode_shift",
+        label="Shift to Low Climate, Resource, and Air-Quality Impact Modes (%)",
         impact_at_0=Impact(),
         impact_at_100=Impact(
             co2_saved_kt=0.0,   # TODO: CO2e avoided at a 100% blend ceiling
@@ -179,11 +191,39 @@ EXTRA_EXAMPLE_METRICS = [
             returns_meur=0.0,   # TODO
             years=0.0,          # TODO
         ),
-        default_pct=50.0,       # board shows the wall at 50%
+        default_pct=50.0,       # board shows the cuts at 50%
     ),
-    # An unordered discrete pick — e.g. the policy instrument used to drive change.
+
+    # MOD 14 - Carbon tax  - Transport of Aircraft Elements
+    PercentageMetric(
+        id="transport_carbon_tax",
+        label="Carbon Tax (%)",
+        impact_at_0=Impact(),
+        impact_at_100=Impact(
+            co2_saved_kt=0.0,   # TODO: CO2e avoided at a 100% blend ceiling
+            cost_meur=0.0,      # TODO
+            returns_meur=0.0,   # TODO
+            years=0.0,          # TODO
+        ),
+        default_pct=50.0,       # board shows the cuts at 50%
+    ),
+
+    # MOD 15 - Schedule buffer - Transport of Aircraft Elements
+    LevelMetric(
+        id="transport_buffer",
+        label="Schedule Buffer",
+        impact_at_min=Impact(),  # level 1 (Pilot): baseline
+        impact_at_max=Impact(
+            co2_saved_kt=0.0,     # TODO: CO2e avoided at EU-Mandate level
+            cost_meur=0.0,        # TODO
+            returns_meur=0.0,     # TODO
+            years=0.0,            # TODO: years to deliver / break even
+        ),
+    ),
+
+    # MOD 16a - Mandates vs. incentives - Next Gen Roadmapping
     ChoiceMetric(
-        id="policy_instrument",
+        id="nextgen_policy_instrument",
         label="Policy instrument",
         options={
             "None": Impact(),
@@ -196,10 +236,39 @@ EXTRA_EXAMPLE_METRICS = [
         },
         default_option="None",
     ),
-    # A technology-choice dropdown — the classic SAF / H2 / Electric / Other.
+
+    # MOD 16b - Decarbonisation commitment by stakeholders - Next Gen Roadmapping
+    PercentageMetric(
+        id="nextgen_decarb_commitment",
+        label="Decarbonisation Commitment by Stakeholders (%)",
+        impact_at_0=Impact(),
+        impact_at_100=Impact(
+            co2_saved_kt=0.0,   # TODO: CO2e avoided at a 100% blend ceiling
+            cost_meur=0.0,      # TODO
+            returns_meur=0.0,   # TODO
+            years=0.0,          # TODO
+        ),
+        default_pct=50.0,       # board shows the cuts at 50%
+    ),
+
+    # MOD 17a - Priority on New Technology Notification - Next Gen Roadmapping
+    PercentageMetric(
+        id="nextgen_tech_priority",
+        label="Priority on New Technology Notification (%)",
+        impact_at_0=Impact(),
+        impact_at_100=Impact(
+            co2_saved_kt=0.0,   # TODO: CO2e avoided at a 100% blend ceiling
+            cost_meur=0.0,      # TODO
+            returns_meur=0.0,   # TODO
+            years=0.0,          # TODO
+        ),
+        default_pct=50.0,       # board shows the cuts at 50%
+    ),
+
+    # MOD 17b - Priority on New Technology Notification - Next Gen Roadmapping
     ChoiceMetric(
-        id="energy_carrier",
-        label="Primary energy carrier",
+        id="nextgen_tech_toggle",
+        label="Priority on New Technology Notification",
         options={
             "SAF": Impact(co2_saved_kt=0.0, cost_meur=0.0, returns_meur=0.0, years=0.0),       # TODO
             "H2": Impact(co2_saved_kt=0.0, cost_meur=0.0, returns_meur=0.0, years=0.0),        # TODO
@@ -208,7 +277,30 @@ EXTRA_EXAMPLE_METRICS = [
         },
         default_option="SAF",
     ),
+
+    # MOD 18 - Actions needed by stakeholer - Next Gen Roadmapping
+    ChoiceMetric(
+        id="nextgen_actions",
+        label="Actions Needed by Stakeholder",
+        options={
+            "Airlines": Impact(co2_saved_kt=0.0, cost_meur=0.0, returns_meur=0.0, years=0.0),       # TODO
+            "OEMs": Impact(co2_saved_kt=0.0, cost_meur=0.0, returns_meur=0.0, years=0.0),        # TODO
+            "Government": Impact(co2_saved_kt=0.0, cost_meur=0.0, returns_meur=0.0, years=0.0),  # TODO
+            "Other": Impact(),
+        },
+        default_option="Airlines",
+    )
+
+    # MOD 19 - Funding by Stakeholder - Extra
+    # PLACEHOLDER
+
 ]
+
+
+# ---------------------------------------------------------------------------
+# Examples of the OTHER control types, in case a module is a slider or dropdown
+# rather than the 1-5 ambition control. Copy the pattern into MODULES as needed.
+# ---------------------------------------------------------------------------
 
 
 def build_simulation(include_examples: bool = False):

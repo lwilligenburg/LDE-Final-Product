@@ -3,10 +3,10 @@ Flight Deck 2050 — backend logic for the sustainable-aviation policy simulator
 
 Public API::
 
-    from flight_deck import Simulation, build_simulation
-    from flight_deck import Impact
-    from flight_deck import PercentageMetric, ChoiceMetric, LevelMetric
-    from flight_deck import Normalization, ScoreWeights
+    from back_end import Simulation, build_simulation
+    from back_end import Impact
+    from back_end import PercentageMetric, ChoiceMetric, LevelMetric
+    from back_end import Normalization, ScoreWeights
 
 Typical use::
 

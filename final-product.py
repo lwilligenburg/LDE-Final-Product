@@ -1,5 +1,5 @@
 """
-Runnable demo — proves the engine works end to end.
+Full executable — proves the engine works end to end.
 
 The numbers here are ILLUSTRATIVE ONLY (invented so the demo produces a non-zero
 score). They are NOT from any thesis and live only in this file — the real module
