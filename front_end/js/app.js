@@ -363,9 +363,9 @@ function renderSidebar() {
   });
 
   if (state.mode === "home") {
-    bottom.appendChild(imgButton("btn_play", () => startPlay(), "play-btn"));
-    bottom.appendChild(imgButton("btn_howto", () => openOverlay("howto")));
-    bottom.appendChild(imgButton("btn_about", () => openOverlay("about")));
+    bottom.appendChild(imgButton("btn-play", () => startPlay(), "play-btn"));
+    bottom.appendChild(imgButton("btn-howto", () => openOverlay("howto")));
+    bottom.appendChild(imgButton("btn-about", () => openOverlay("about")));
   } else {
     const score = el("div", "score-card" + (state.result ? "" : " dim"),
       state.result ? `Score : ${Math.round(state.result.composite)}/100` : "Score :");
@@ -381,10 +381,8 @@ function renderSidebar() {
   }
 }
 
-function imgButton(name, onclick, extra = "") {
-  const b = el("button", "img-btn " + extra);
-  b.style.setProperty("--img", `url(assets/${name}.png)`);
-  b.style.setProperty("--img-sel", `url(assets/${name}_sel.png)`);
+function imgButton(cssClass, onclick, extra = "") {
+  const b = el("button", "img-btn " + cssClass + (extra ? " " + extra : ""));
   b.onclick = onclick;
   return b;
 }

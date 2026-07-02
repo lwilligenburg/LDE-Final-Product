@@ -255,11 +255,17 @@ html, body {
 
 /* home buttons (image-based, with selected state on hover/active) */
 .img-btn {
-  height: 62px; border: none; background: var(--img) center / 100% 100% no-repeat;
+  height: 62px; border: none;
+  background: center / 100% 100% no-repeat;
   cursor: pointer; border-radius: 10px;
 }
-.img-btn:hover, .img-btn:active { background-image: var(--img-sel); }
 .img-btn.play-btn { height: 92px; }
+.btn-play  { background-image: url(../assets/btn_play.png); }
+.btn-play:hover,  .btn-play:active  { background-image: url(../assets/btn_play_sel.png); }
+.btn-howto { background-image: url(../assets/btn_howto.png); }
+.btn-howto:hover, .btn-howto:active { background-image: url(../assets/btn_howto_sel.png); }
+.btn-about { background-image: url(../assets/btn_about.png); }
+.btn-about:hover, .btn-about:active { background-image: url(../assets/btn_about_sel.png); }
 
 .score-card {
   height: 78px;
@@ -280,6 +286,7 @@ html, body {
 
 .overlay {
   position: absolute; inset: 0;
+  z-index: 50;             /* always above tiles/panels */
   background: var(--white);
   display: none;
   padding: 22px 40px;
