@@ -55,9 +55,32 @@ MODULES: list = [
         default_pct=50.0,
     ),
 
-    # MOD 04 - PLACEHOLDER
-    # MOD 05 - PLACEHOLDER
-    # MOD 06 - PLACEHOLDER
+    # MOD 04 - System maintenance effort - Bio-Sensors
+    # Level 1 = Low effort ... Level 5 = High effort. The ratings below define
+    # what each end MEANS for climate / financial / time.
+    LevelMetric(
+        id="biosensor_maintenance",
+        label="System Maintenance Effort",
+        impact_at_min=_BASE,
+        impact_at_max=_TODO,  # TODO
+    ),
+
+    # MOD 05 - Reliability gain vs. current sensors - Bio-Sensors
+    PercentageMetric(
+        id="biosensor_reliability",
+        label="Reliability Gain vs. Current Sensors (% more reliable)",
+        impact_at_0=_BASE,
+        impact_at_100=_TODO,  # TODO
+        default_pct=50.0,
+    ),
+
+    # MOD 06 - Certification support - Bio-Sensors
+    LevelMetric(
+        id="biosensor_certification",
+        label="Certification Support",
+        impact_at_min=_BASE,
+        impact_at_max=_TODO,  # TODO
+    ),
 
     # MOD 07 - Data Depth - Digital Passport
     PercentageMetric(
@@ -84,13 +107,8 @@ MODULES: list = [
         impact_at_max=_TODO,  # TODO
     ),
 
-    # MOD 10 - Funding payback period - Emission Guide & Eco-label
-    LevelMetric(
-        id="EGE_payback_period",
-        label="Funding Payback Period (years)",
-        impact_at_min=_BASE,
-        impact_at_max=_TODO,  # TODO
-    ),
+    # MOD 10 - Funding payback period — REMOVED: replaced by MOD 19 (funding_split)
+    # in the Emission Guide & Eco-Label group, per design decision.
 
     # MOD 11 - Global Participation (incl. eco-labels) - Emission Guide & Eco-label
     LevelMetric(
