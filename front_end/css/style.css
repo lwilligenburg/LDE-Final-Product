@@ -282,6 +282,46 @@ html, body {
 }
 .sb-btn:hover:not(:disabled) { background: var(--panel); }
 
+/* ----------------------------- help bubbles ----------------------------- */
+
+.help-btn {
+  width: 30px; height: 30px;
+  border: 2px solid var(--blue); border-radius: 50%;
+  background: var(--white);
+  color: var(--blue);
+  font: inherit; font-size: 18px; font-weight: 700; line-height: 1;
+  cursor: pointer;
+  display: inline-flex; align-items: center; justify-content: center;
+}
+.help-btn:hover { background: #dcebf3; }   /* backdrop changes colour on hover */
+
+/* THE bubble: a single element living directly under #stage, above everything.
+   Its left/top are set from JS next to the clicked (?) button. */
+#stage > .help-bubble {
+  display: none;
+  position: absolute; left: 0; top: 0;
+  width: 360px;
+  max-height: 360px; overflow-y: auto;
+  background: var(--white);
+  border: 2px solid var(--blue); border-radius: 10px;
+  box-shadow: 0 6px 18px rgba(23,102,145,.25);
+  padding: 12px 14px;
+  font-size: 15px; font-weight: 400; line-height: 1.4; color: var(--blue);
+  text-align: left;
+  z-index: 100;               /* above overlays (50) and every card */
+}
+#stage > .help-bubble.open { display: block; }
+
+/* placement on the question boxes (top-right corner) */
+.q-help { position: absolute; top: 10px; right: 10px; }
+.q-box { position: relative; }
+
+/* placement on breakdown metric lines (rightmost) */
+.bd-impact { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.help-btn.bd-help { width: 24px; height: 24px; font-size: 15px; border-width: 1.5px; flex: none; }
+
+/* ------------------------------- overlays ------------------------------- */
+
 /* ------------------------------- overlays ------------------------------- */
 
 .overlay {

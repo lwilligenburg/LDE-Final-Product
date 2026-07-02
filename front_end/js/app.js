@@ -175,12 +175,83 @@ function personaFor(r) {
   return ["Visionary", "Pragmatist", "Sprinter"][s.indexOf(max)];
 }
 
+/* ------------------------------ help bubbles ---------------------------- */
+
+// Which metric ids a question drives (some questions drive two modules).
+function questionMetricIds(q) {
+  if (q.special === "policy") return ["nextgen_decarb_commitment", "nextgen_policy_instrument"];
+  if (q.special === "tech") return ["nextgen_tech_toggle", "nextgen_tech_priority"];
+  return [q.metric];
+}
+
+// One single bubble element, living directly under #stage (top of the page),
+// so no card, panel or text can ever stack above it.
+let helpBubbleEl = null;
+let helpBubbleAnchor = null;
+let stageScale = 1;
+
+function getHelpBubble() {
+  if (!helpBubbleEl) {
+    helpBubbleEl = el("div", "help-bubble");
+    helpBubbleEl.onclick = (e) => e.stopPropagation();
+    $("#stage").appendChild(helpBubbleEl);
+  }
+  return helpBubbleEl;
+}
+
+function closeHelpBubbles() {
+  if (helpBubbleEl) helpBubbleEl.classList.remove("open");
+  helpBubbleAnchor = null;
+}
+
+function openHelpBubble(btn, html) {
+  const bubble = getHelpBubble();
+  bubble.innerHTML = html;
+  bubble.classList.add("open");
+  helpBubbleAnchor = btn;
+
+  // Position next to the button, in stage coordinates (stage is CSS-scaled).
+  const stage = $("#stage");
+  if (!stage.getBoundingClientRect || !btn.getBoundingClientRect) return; // test envs
+  const st = stage.getBoundingClientRect();
+  const br = btn.getBoundingClientRect();
+  const s = stageScale || 1;
+  const W = 360;
+  let x = (br.right - st.left) / s - W;          // right-aligned under the button
+  let y = (br.bottom - st.top) / s + 8;
+  x = Math.max(8, Math.min(x, 1920 - W - 8));
+  bubble.style.left = x + "px";
+  bubble.style.top = y + "px";
+  // If it runs off the bottom, flip it above the button.
+  const H = bubble.offsetHeight || 0;
+  if (y + H > 1072) {
+    y = Math.max(8, (br.top - st.top) / s - H - 8);
+    bubble.style.top = y + "px";
+  }
+}
+
+// A (?) button that toggles the bubble. kind = "question" | "impact".
+function helpButton(ids, kind, extraClass = "") {
+  const joined = ids.map(id => (EXPLANATIONS[id] || {})[kind] || "").filter(Boolean).join("\n\n");
+  if (!joined) return null; // no text -> no button
+  const html = joined.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/\n/g, "<br>");
+  const btn = el("button", "help-btn" + (extraClass ? " " + extraClass : ""), "?");
+  btn.type = "button";
+  btn.onclick = (e) => {
+    e.stopPropagation();
+    if (helpBubbleAnchor === btn) { closeHelpBubbles(); return; } // toggle off
+    openHelpBubble(btn, html);
+  };
+  return btn;
+}
+
 /* ------------------------------- rendering ------------------------------ */
 
 function completedCount() { return state.completed.filter(Boolean).length; }
 function allCompleted() { return completedCount() === TOPICS.length; }
 
 function render() {
+  closeHelpBubbles();
   renderTiles();
   renderCenter();
   renderSidebar();
@@ -271,6 +342,8 @@ function renderCenter() {
 
 function buildQuestionBox(ti, qi, q) {
   const box = el("div", "q-box");
+  const help = helpButton(questionMetricIds(q), "question", "q-help");
+  if (help) box.appendChild(help);
   box.appendChild(el("div", "q-label", q.label.replace(/\n/g, "<br>")));
 
   if (q.type === "slider") {
@@ -450,16 +523,17 @@ function renderBreakdown() {
       const a = state.answers[ti][qi];
       const shown = q.type === "slider" && /^\d+$/.test(q.min) ? a + "%" :
                     q.special === "policy" ? `${a} (${a < 50 ? "Mandate" : "Incentive"} side)` : a;
-      const ids = q.special === "policy" ? ["nextgen_decarb_commitment", "nextgen_policy_instrument"]
-                : q.special === "tech" ? ["nextgen_tech_toggle", "nextgen_tech_priority"]
-                : [q.metric];
+      const ids = questionMetricIds(q);
       const line = el("div", "bd-q");
       line.appendChild(el("div", "bd-qlabel", `${q.label.split("\n")[0]} — <b>${shown}</b>`));
       ids.forEach(id => {
         const c = byId[id];
         if (!c) return;
-        line.appendChild(el("div", "bd-impact",
-          `${c.label}: C ${fmt(c.impact.climate)} · F ${fmt(c.impact.financial)} · T ${fmt(c.impact.time)}`));
+        const row = el("div", "bd-impact");
+        row.appendChild(el("span", "", `${c.label}: C ${fmt(c.impact.climate)} · F ${fmt(c.impact.financial)} · T ${fmt(c.impact.time)}`));
+        const help = helpButton([id], "impact", "bd-help");
+        if (help) row.appendChild(help);
+        line.appendChild(row);
       });
       card.appendChild(line);
     });
@@ -491,6 +565,7 @@ function buildTiles() {
 
 function scaleStage() {
   const s = Math.min(window.innerWidth / 1920, window.innerHeight / 1080);
+  stageScale = s;
   const st = $("#stage");
   st.style.transform = `translate(-50%, -50%) scale(${s})`;
 }
@@ -498,7 +573,10 @@ function scaleStage() {
 window.addEventListener("resize", scaleStage);
 document.addEventListener("DOMContentLoaded", () => {
   buildTiles();
-  document.querySelectorAll(".overlay .return-btn").forEach(b => b.onclick = closeOverlays);
+  document.querySelectorAll(".overlay .return-btn").forEach(b => b.onclick = () => { closeHelpBubbles(); closeOverlays(); });
+  document.addEventListener("click", closeHelpBubbles); // click elsewhere closes the bubble
+  const bd = $("#breakdown-body");
+  if (bd) bd.onscroll = closeHelpBubbles;               // bubble is anchored, so close on scroll
   scaleStage();
   render();
 });
