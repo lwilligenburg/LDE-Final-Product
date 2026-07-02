@@ -312,8 +312,7 @@ def build_simulation(include_examples: bool = False):
     from .engine import Simulation  # local import to avoid a cycle
 
     metrics = list(MODULES)
-    if include_examples:
-        metrics = metrics + list(EXTRA_EXAMPLE_METRICS)
+    
     return Simulation(
         metrics=metrics,
         weights=ScoreWeights(climate=1.0, financial=1.0, time=1.0),  # TODO: retune

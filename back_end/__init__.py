@@ -19,7 +19,7 @@ from .impacts import ZERO, Impact
 from .metrics import ChoiceMetric, LevelMetric, Metric, PercentageMetric
 from .scoring import Normalization, ScoreWeights, linear_score
 from .engine import MetricContribution, Simulation, SimulationResult
-from .modules import MODULES, EXTRA_EXAMPLE_METRICS, build_simulation
+from .modules import MODULES, build_simulation
 
 __all__ = [
     "Impact",
