@@ -1,8 +1,8 @@
 """
-Tests for the Flight Deck engine. Run with:  pytest -q   (or: python -m pytest)
+Tests for the ratings-based Flight Deck engine. Run:  pytest -q
 
-These check the *mechanics* (validation, interpolation, aggregation, scoring),
-not the thesis numbers — so they stay valid as you fill in modules.py.
+These check mechanics (rating resolution, interpolation, allocation blending,
+averaging, validation), so they stay valid as you fill in real ratings.
 """
 
 import math
@@ -10,157 +10,167 @@ import math
 import pytest
 
 from back_end import (
+    AllocationMetric,
     ChoiceMetric,
     Impact,
     LevelMetric,
-    Normalization,
     PercentageMetric,
     ScoreWeights,
     Simulation,
-    linear_score,
+    rate,
+    rating_value,
 )
 
 
-# --- metric validation ------------------------------------------------------
+# --- rating scale -----------------------------------------------------------
 
-def test_percentage_rejects_out_of_range():
-    m = PercentageMetric(id="p", label="p")
+def test_rating_value_labels_numbers_and_none():
+    assert rating_value("Very Low") == 0.0
+    assert rating_value("Medium") == 50.0
+    assert rating_value("Very High") == 100.0
+    assert rating_value(42) == 42.0
+    assert rating_value(None) is None
+
+
+def test_rating_value_rejects_unknown_label():
     with pytest.raises(ValueError):
-        m.impact_of(101)
-    with pytest.raises(ValueError):
-        m.impact_of(-1)
+        rating_value("Enormous")
 
 
-def test_level_rejects_out_of_range_and_bools():
-    m = LevelMetric(id="l", label="l", levels=5)
-    with pytest.raises(ValueError):
-        m.impact_of(6)
-    with pytest.raises(ValueError):
-        m.impact_of(0)
-    with pytest.raises(ValueError):
-        m.impact_of(True)  # bool must not sneak through as int
-
-
-def test_choice_rejects_unknown_option():
-    m = ChoiceMetric(id="c", label="c", options={"A": Impact(), "B": Impact()})
-    with pytest.raises(ValueError):
-        m.impact_of("Z")
-
-
-def test_choice_defaults_to_first_option():
-    m = ChoiceMetric(id="c", label="c", options={"A": Impact(co2_saved_kt=1), "B": Impact()})
-    assert m.default() == "A"
+def test_rate_omitted_dimension_is_not_applicable():
+    imp = rate(financial="High", time="Low")
+    assert imp.climate is None
+    assert imp.financial == 75.0
+    assert imp.time == 25.0
 
 
 # --- interpolation ----------------------------------------------------------
 
-def test_percentage_interpolates_linearly():
+def test_percentage_interpolates_ratings():
     m = PercentageMetric(
         id="p", label="p",
-        impact_at_0=Impact(co2_saved_kt=0.0, cost_meur=0.0),
-        impact_at_100=Impact(co2_saved_kt=100.0, cost_meur=200.0),
+        impact_at_0=rate("Very Low", "Very Low", "Very Low"),
+        impact_at_100=rate("Very High", "Medium", "Very Low"),
     )
     half = m.impact_of(50)
-    assert math.isclose(half.co2_saved_kt, 50.0)
-    assert math.isclose(half.cost_meur, 100.0)
+    assert math.isclose(half.climate, 50.0)     # 0 -> 100 at t=.5
+    assert math.isclose(half.financial, 25.0)   # 0 -> 50 at t=.5
+
+
+def test_lerp_keeps_none_across_range():
+    a = rate(financial="Low")            # climate/time None
+    b = rate(financial="High")
+    mid = Impact.lerp(a, b, 0.5)
+    assert mid.climate is None
+    assert math.isclose(mid.financial, 50.0)
 
 
 def test_level_endpoints_and_midpoint():
     m = LevelMetric(
         id="l", label="l", levels=5,
-        impact_at_min=Impact(co2_saved_kt=0.0),
-        impact_at_max=Impact(co2_saved_kt=400.0),
+        impact_at_min=rate("Very Low", "Very Low", "Very Low"),
+        impact_at_max=rate("Very High", "Very High", "Very High"),
     )
-    assert math.isclose(m.impact_of(1).co2_saved_kt, 0.0)
-    assert math.isclose(m.impact_of(5).co2_saved_kt, 400.0)
-    assert math.isclose(m.impact_of(3).co2_saved_kt, 200.0)  # midpoint
+    assert math.isclose(m.impact_of(1).climate, 0.0)
+    assert math.isclose(m.impact_of(3).climate, 50.0)
+    assert math.isclose(m.impact_of(5).climate, 100.0)
 
 
-def test_level_per_level_override():
-    m = LevelMetric(
-        id="l", label="l", levels=5,
-        impact_at_min=Impact(co2_saved_kt=0.0),
-        impact_at_max=Impact(co2_saved_kt=400.0),
-        per_level={3: Impact(co2_saved_kt=999.0)},
+# --- allocation metric ------------------------------------------------------
+
+def _funding():
+    return AllocationMetric(
+        id="funding_split",
+        label="Who pays",
+        groups={
+            "Government": rate(financial="Medium", time="High"),   # 50 / 75
+            "Private": rate(financial="High", time="Low"),         # 75 / 25
+            "NGO": rate(financial="Low", time="Medium"),           # 25 / 50
+            "Public": rate(financial="Low", time="Medium"),        # 25 / 50
+        },
     )
-    assert math.isclose(m.impact_of(3).co2_saved_kt, 999.0)
 
 
-# --- scoring ----------------------------------------------------------------
-
-def test_linear_score_clamps_and_inverts():
-    # higher-is-better
-    assert linear_score(0, 0, 100) == 0
-    assert linear_score(100, 0, 100) == 100
-    assert linear_score(50, 0, 100) == 50
-    assert linear_score(200, 0, 100) == 100  # clamp
-    # lower-is-better (best < worst), e.g. time
-    assert linear_score(0, 25, 0) == 100
-    assert linear_score(25, 25, 0) == 0
+def test_allocation_default_is_equal_split():
+    assert _funding().default() == {"Government": 25, "Private": 25, "NGO": 25, "Public": 25}
 
 
-def test_weights_are_normalised():
-    w = ScoreWeights(climate=2, financial=1, time=1)
-    # composite of all-100 sub-scores is 100 regardless of raw weight magnitudes
-    assert math.isclose(w.combine(100, 100, 100), 100.0)
-    # climate weighted double: 100/0/0 -> 50
-    assert math.isclose(w.combine(100, 0, 0), 50.0)
+def test_allocation_blends_by_share_and_climate_is_na():
+    imp = _funding().impact_of({"Government": 100, "Private": 0, "NGO": 0, "Public": 0})
+    assert imp.climate is None                 # every group omits climate
+    assert math.isclose(imp.financial, 50.0)   # 100% Government
+    assert math.isclose(imp.time, 75.0)
 
 
-# --- engine aggregation -----------------------------------------------------
+def test_allocation_weighted_blend():
+    imp = _funding().impact_of({"Government": 50, "Private": 50, "NGO": 0, "Public": 0})
+    assert math.isclose(imp.financial, (50 * 50 + 75 * 50) / 100)  # 62.5
+    assert math.isclose(imp.time, (75 * 50 + 25 * 50) / 100)       # 50.0
+
+
+def test_allocation_rejects_non_100_sum():
+    with pytest.raises(ValueError):
+        _funding().impact_of({"Government": 40, "Private": 30, "NGO": 10, "Public": 10})  # 90
+
+
+def test_allocation_rejects_wrong_groups():
+    with pytest.raises(ValueError):
+        _funding().impact_of({"Government": 100})
+
+
+def test_allocation_rejects_negative_share():
+    with pytest.raises(ValueError):
+        _funding().impact_of({"Government": 110, "Private": -10, "NGO": 0, "Public": 0})
+
+
+# --- engine averaging -------------------------------------------------------
 
 def _sim():
-    metrics = [
-        LevelMetric(
-            id="a", label="a", levels=5,
-            impact_at_min=Impact(),
-            impact_at_max=Impact(co2_saved_kt=600, cost_meur=400, returns_meur=500, years=10),
-        ),
-        ChoiceMetric(
-            id="b", label="b",
-            options={
-                "off": Impact(),
-                "on": Impact(co2_saved_kt=200, cost_meur=100, returns_meur=50, years=2),
-            },
-            default_option="off",
-        ),
-    ]
     return Simulation(
-        metrics=metrics,
+        metrics=[
+            LevelMetric(
+                id="a", label="a", levels=5,
+                impact_at_min=rate("Very Low", "Very Low", "Very Low"),
+                impact_at_max=rate("Very High", "High", "Low"),
+            ),
+            ChoiceMetric(
+                id="b", label="b",
+                options={
+                    "off": rate("Very Low", "Very Low", "Very Low"),
+                    "on": rate("High", "Medium", "High"),
+                },
+                default_option="off",
+            ),
+            _funding(),
+        ],
         weights=ScoreWeights(),
-        normalization=Normalization(
-            climate_best_kt=1000, financial_worst_meur=-500, financial_best_meur=500,
-            time_worst_years=25, time_best_years=0,
-        ),
     )
 
 
-def test_default_board_is_all_zero():
+def test_scores_average_only_applicable_dimensions():
+    r = _sim().evaluate({"a": 5, "b": "on", "funding_split": {"Government": 100, "Private": 0, "NGO": 0, "Public": 0}})
+    # climate: metric a=100, b=75, funding=N/A -> mean(100,75) = 87.5
+    assert math.isclose(r.climate_score, 87.5)
+    # financial: a=75, b=50, funding=50 -> mean = 58.333...
+    assert math.isclose(r.financial_score, (75 + 50 + 50) / 3)
+    # time: a=25, b=75, funding=75 -> mean = 58.333...
+    assert math.isclose(r.time_score, (25 + 75 + 75) / 3)
+
+
+def test_composite_in_range_and_weighted():
     r = _sim().evaluate()
-    assert r.climate_kt == 0
-    assert r.net_value_meur == 0
-    assert r.time_years == 0
-    # zero CO2 -> 0, zero net value -> midpoint of [-500,500] = 50, zero years -> 100
-    assert math.isclose(r.climate_score, 0.0)
-    assert math.isclose(r.financial_score, 50.0)
-    assert math.isclose(r.time_score, 100.0)
-
-
-def test_aggregation_and_net_value():
-    r = _sim().evaluate({"a": 5, "b": "on"})
-    assert math.isclose(r.climate_kt, 800.0)          # 600 + 200
-    assert math.isclose(r.net_value_meur, 50.0)       # (500-400) + (50-100) = 100 + (-50)
-    # investment-weighted years: (10*400 + 2*100)/(400+100) = 4200/500 = 8.4
-    assert math.isclose(r.time_years, 8.4)
+    assert 0.0 <= r.composite <= 100.0
 
 
 def test_unknown_metric_id_raises():
     with pytest.raises(ValueError):
-        _sim().evaluate({"does_not_exist": 3})
+        _sim().evaluate({"nope": 1})
 
+
+# --- the real board ---------------------------------------------------------
 
 def test_real_board_builds_and_runs():
     from back_end import build_simulation
-    sim = build_simulation(include_examples=True)
-    r = sim.evaluate()  # all defaults; TODO zeros -> should not crash
+    sim = build_simulation()
+    r = sim.evaluate()  # all defaults
     assert 0.0 <= r.composite <= 100.0

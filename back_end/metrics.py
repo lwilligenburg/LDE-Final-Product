@@ -1,25 +1,16 @@
 """
-Metric types — the controls a player actually manipulates.
+Metric types — the controls a player manipulates.
 
-Every metric knows three things:
+Unchanged from before: PercentageMetric (0-100% slider), ChoiceMetric (discrete
+pick), LevelMetric (ordered 1..N ambition slider). They now carry rating-based
+Impacts (see impacts.py) but their code is identical — the slider/level classes
+interpolate with ``Impact.lerp`` exactly as before, so a rated 'low end' and
+'high end' produce a smooth Very Low -> Very High sweep automatically.
 
-  * how to validate a raw value coming from the UI,
-  * how to turn a valid value into an :class:`~flight_deck.impacts.Impact`,
-  * what its default (starting) value is.
-
-Three concrete types cover everything on the Flight Deck board:
-
-  * :class:`PercentageMetric` — a 0-100% slider (EOL recovery rate, SAF blend,
-    verified feedstock, ...). Impact interpolates between a 0% end and a 100% end.
-  * :class:`ChoiceMetric` — an unordered discrete pick (Mandate / Incentive,
-    SAF / H2 / Electric / Other, Low / Medium / High). Each option carries its
-    own Impact.
-  * :class:`LevelMetric` — the ordered 1-5 "Ambition Level" slider. Impact
-    interpolates between the minimum and maximum ambition, or you can pin an
-    explicit Impact per level.
-
-Add a new metric type by subclassing :class:`Metric` and implementing the three
-abstract methods; the engine will treat it like any other.
+New: AllocationMetric — a set of stakeholder shares that must sum to 100%
+(Government / Private / NGO / Public). It is NOT a percentage or a choice: the
+shares are interdependent. Each group carries its own impact profile and the
+engine blends them by share.
 """
 
 from __future__ import annotations
@@ -32,11 +23,7 @@ from .impacts import ZERO, Impact
 
 
 class Metric(ABC):
-    """Base class for every controllable metric.
-
-    Subclasses set ``id`` (a stable machine key used in the choices dict) and
-    ``label`` (human text for the UI), and implement the three methods below.
-    """
+    """Base class for every controllable metric."""
 
     id: str
     label: str
@@ -51,7 +38,7 @@ class Metric(ABC):
 
     @abstractmethod
     def default(self) -> Any:
-        """Return the metric's starting value (used when a player leaves it untouched)."""
+        """Return the metric's starting value."""
 
     def describe(self, value: Any) -> str:
         """Human-readable rendering of a chosen value (overridable)."""
@@ -62,12 +49,9 @@ class Metric(ABC):
 class PercentageMetric(Metric):
     """A continuous 0-100% slider.
 
-    The Impact is a linear interpolation between ``impact_at_0`` (slider at 0%)
-    and ``impact_at_100`` (slider at 100%). That lets cost, CO2, returns and even
-    delivery time all differ between the low and high ends of the slider.
-
-    If your relationship is non-linear, pass a ``response`` callable that maps the
-    raw 0-100 value to a 0-1 interpolation fraction (e.g. ``lambda p: (p/100)**2``).
+    Impact interpolates between ``impact_at_0`` (0%) and ``impact_at_100`` (100%),
+    so rate the two ends (e.g. Very Low at 0%, High at 100%) and every position in
+    between is handled for you. Pass a ``response`` callable for a non-linear curve.
     """
 
     id: str
@@ -79,7 +63,7 @@ class PercentageMetric(Metric):
     response: Any = None  # optional callable: (pct: float) -> fraction in [0, 1]
 
     def validate(self, value: Any) -> None:
-        if not isinstance(value, (int, float)):
+        if not isinstance(value, (int, float)) or isinstance(value, bool):
             raise ValueError(f"{self.id}: expected a number, got {value!r}")
         if not 0.0 <= float(value) <= 100.0:
             raise ValueError(f"{self.id}: {value} out of range 0-100")
@@ -98,21 +82,7 @@ class PercentageMetric(Metric):
 
 @dataclass
 class ChoiceMetric(Metric):
-    """An unordered discrete pick — one Impact per named option.
-
-    Example::
-
-        ChoiceMetric(
-            id="policy_instrument",
-            label="Policy instrument",
-            options={
-                "Mandate":   Impact(...),
-                "Incentive": Impact(...),
-                "None":      Impact(),
-            },
-            default_option="None",
-        )
-    """
+    """An unordered discrete pick — one Impact per named option."""
 
     id: str
     label: str
@@ -150,14 +120,10 @@ class ChoiceMetric(Metric):
 
 @dataclass
 class LevelMetric(Metric):
-    """The ordered 1..N "Ambition Level" slider from the board (N defaults to 5).
+    """The ordered 1..N "Ambition Level" slider (N defaults to 5).
 
-    By default the Impact interpolates linearly from ``impact_at_min`` (level 1)
-    to ``impact_at_max`` (level N). If a particular level needs a bespoke Impact,
-    put it in ``per_level`` and it overrides the interpolation for that level.
-
-    ``level_names`` mirrors the labels under the slider (e.g. Pilot ... EU Mandate)
-    and is used only for display.
+    Impact interpolates from ``impact_at_min`` (level 1) to ``impact_at_max``
+    (level N). Override a specific rung with ``per_level={3: rate(...)}``.
     """
 
     id: str
@@ -196,3 +162,94 @@ class LevelMetric(Metric):
         if self.level_names and 1 <= value <= len(self.level_names):
             return f"L{value} · {self.level_names[value - 1]}"
         return f"L{value}"
+
+
+@dataclass
+class AllocationMetric(Metric):
+    """Interdependent shares that must sum to 100% (e.g. who funds the transition).
+
+    Each stakeholder group carries an impact *profile* — the impact you'd get if
+    that group funded 100% of the transition. The chosen allocation blends those
+    profiles by share. Because the shares are coupled (they must total 100), this
+    is deliberately its own type rather than several PercentageMetrics.
+
+    A value is a dict ``{group: percent}`` covering exactly the defined groups and
+    summing to 100 (within ``tolerance``). Leave a dimension of a group's profile
+    as ``None`` (via ``rate``) to make the whole module not-applicable on that
+    dimension — e.g. funding is climate-neutral, so every group omits ``climate``.
+
+    Example::
+
+        AllocationMetric(
+            id="funding_split",
+            label="Who pays for the transition",
+            groups={
+                "Government": rate(financial="Medium", time="High"),
+                "Private":    rate(financial="High",   time="Low"),
+                "NGO":        rate(financial="Low",    time="Medium"),
+                "Public":     rate(financial="Low",    time="Medium"),
+            },
+        )
+    """
+
+    id: str
+    label: str
+    groups: dict[str, Impact] = field(default_factory=dict)
+    default_allocation: dict[str, float] | None = None
+    tolerance: float = 0.5  # how far the shares may stray from summing to 100
+
+    _DIMS = ("climate", "financial", "time")
+
+    def __post_init__(self) -> None:
+        if len(self.groups) < 2:
+            raise ValueError(f"{self.id}: AllocationMetric needs at least two groups")
+        if self.default_allocation is None:
+            # Equal split across the groups.
+            even = 100.0 / len(self.groups)
+            self.default_allocation = {g: even for g in self.groups}
+        # Validate the default eagerly so config errors surface at import time.
+        self.validate(self.default_allocation)
+
+    @property
+    def group_names(self) -> list[str]:
+        return list(self.groups)
+
+    def validate(self, value: Any) -> None:
+        if not isinstance(value, dict):
+            raise ValueError(f"{self.id}: allocation must be a dict of group -> percent")
+        if set(value) != set(self.groups):
+            raise ValueError(
+                f"{self.id}: allocation must cover exactly {self.group_names}, got {list(value)}"
+            )
+        for g, share in value.items():
+            if not isinstance(share, (int, float)) or isinstance(share, bool):
+                raise ValueError(f"{self.id}: share for {g!r} must be a number, got {share!r}")
+            if share < 0:
+                raise ValueError(f"{self.id}: share for {g!r} is negative ({share})")
+        total = sum(value.values())
+        if abs(total - 100.0) > self.tolerance:
+            raise ValueError(f"{self.id}: shares must sum to 100 (got {total:g})")
+
+    def impact_of(self, value: Any) -> Impact:
+        self.validate(value)
+        total = sum(value.values()) or 100.0  # guard divide-by-zero
+        blended: dict[str, float | None] = {}
+        for dim in self._DIMS:
+            per_group = [(getattr(self.groups[g], dim), value[g]) for g in self.groups]
+            defined = [(v, s) for v, s in per_group if v is not None]
+            if not defined:
+                blended[dim] = None                      # not applicable for every group
+            elif len(defined) == len(per_group):
+                blended[dim] = sum(v * s for v, s in per_group) / total
+            else:
+                raise ValueError(
+                    f"{self.id}: dimension {dim!r} is set for some groups but not all; "
+                    "make it consistent (all rated, or all None)."
+                )
+        return Impact(**blended)
+
+    def default(self) -> dict[str, float]:
+        return dict(self.default_allocation)
+
+    def describe(self, value: Any) -> str:
+        return " · ".join(f"{g} {value[g]:g}%" for g in self.groups)

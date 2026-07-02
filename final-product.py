@@ -1,97 +1,94 @@
 """
-Full executable — proves the engine works end to end.
+Full executable — proves the ratings engine works end to end.
 
-The numbers here are ILLUSTRATIVE ONLY (invented so the demo produces a non-zero
-score). They are NOT from any thesis and live only in this file — the real module
-config in flight_deck/modules.py keeps its TODO placeholders untouched.
-
-Run it:  python demo.py
+Ratings here are ILLUSTRATIVE. The real board config lives in
+back_end/modules.py. Run it:  python final-product.py
 """
 
 from back_end import (
+    AllocationMetric,
     ChoiceMetric,
-    Impact,
     LevelMetric,
-    Normalization,
     PercentageMetric,
     ScoreWeights,
     Simulation,
+    rate,
 )
 
 
 def build_illustrative_sim() -> Simulation:
-    """A tiny 3-metric scenario using each control type, with made-up numbers."""
+    """A small scenario using every control type, rated Very Low -> Very High."""
     metrics = [
-        # 1-5 ambition slider: SAF supply-chain reform.
+        # 1-5 ambition slider.
         LevelMetric(
             id="saf_supply_chain",
             label="SAF Supply Chain reform",
-            impact_at_min=Impact(),  # level 1: nothing changes
-            impact_at_max=Impact(    # level 5: big CO2 win, pricey, slow-ish payoff
-                co2_saved_kt=600.0, cost_meur=420.0, returns_meur=520.0, years=9.0
-            ),
+            impact_at_min=rate("Very Low", "Very Low", "Very Low"),
+            impact_at_max=rate("Very High", "Medium", "Low"),
         ),
-        # 0-100% slider: SAF blend ceiling.
+        # 0-100% slider.
         PercentageMetric(
             id="saf_blend_ceiling_pct",
             label="SAF blend ceiling (%)",
-            impact_at_0=Impact(),
-            impact_at_100=Impact(
-                co2_saved_kt=300.0, cost_meur=180.0, returns_meur=210.0, years=5.0
-            ),
+            impact_at_0=rate("Very Low", "Low", "High"),
+            impact_at_100=rate("High", "Low", "Medium"),
             default_pct=50.0,
         ),
-        # discrete pick: policy instrument.
+        # discrete pick.
         ChoiceMetric(
             id="policy_instrument",
             label="Policy instrument",
             options={
-                "None": Impact(),
-                "Incentive": Impact(co2_saved_kt=80.0, cost_meur=120.0, returns_meur=60.0, years=3.0),
-                "Mandate": Impact(co2_saved_kt=160.0, cost_meur=60.0, returns_meur=40.0, years=2.0),
+                "None": rate("Very Low", "Very Low", "Very Low"),
+                "Incentive": rate("Medium", "Low", "Medium"),
+                "Mandate": rate("High", "Medium", "High"),
             },
             default_option="None",
         ),
-    ]
-    return Simulation(
-        metrics=metrics,
-        weights=ScoreWeights(climate=1.0, financial=1.0, time=1.0),
-        normalization=Normalization(
-            climate_best_kt=1000.0,
-            financial_worst_meur=-500.0,
-            financial_best_meur=500.0,
-            time_worst_years=25.0,
-            time_best_years=0.0,
+        # allocation that must sum to 100 (climate-neutral: only financial + time).
+        AllocationMetric(
+            id="funding_split",
+            label="Who pays for the transition",
+            groups={
+                "Government": rate(financial="Medium", time="High"),
+                "Private": rate(financial="High", time="Low"),
+                "NGO": rate(financial="Low", time="Medium"),
+                "Public": rate(financial="Low", time="Medium"),
+            },
         ),
-    )
+    ]
+    return Simulation(metrics=metrics, weights=ScoreWeights(1.0, 1.0, 1.0))
 
 
 def main() -> None:
     sim = build_illustrative_sim()
 
     print("=" * 60)
-    print("Starting board (everything at default):")
+    print("Starting board (defaults):")
     print(sim.evaluate(sim.default_choices()).summary())
 
     print("=" * 60)
     print("An ambitious playthrough:")
     result = sim.evaluate(
         {
-            "saf_supply_chain": 5,          # full ambition
-            "saf_blend_ceiling_pct": 70,    # push the blend wall to 70%
+            "saf_supply_chain": 5,
+            "saf_blend_ceiling_pct": 70,
             "policy_instrument": "Mandate",
+            "funding_split": {"Government": 40, "Private": 20, "NGO": 10, "Public": 30},
         }
     )
     print(result.summary())
 
     print("-" * 60)
-    print("Per-metric breakdown:")
+    print("Per-metric breakdown (climate / financial / time, blank = N/A):")
     for c in result.contributions:
+        def cell(v):
+            return " -- " if v is None else f"{v:4.0f}"
         print(
-            f"  {c.label:32s} = {c.rendered:14s} "
-            f"| CO2 {c.impact.co2_saved_kt:6.0f} kt "
-            f"| net {c.impact.returns_meur - c.impact.cost_meur:7.0f} M "
-            f"| {c.impact.years:.0f} yr"
+            f"  {c.label:34s} = {c.rendered:28s} "
+            f"| C {cell(c.impact.climate)} "
+            f"| F {cell(c.impact.financial)} "
+            f"| T {cell(c.impact.time)}"
         )
 
 
