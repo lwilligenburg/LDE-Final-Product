@@ -32,8 +32,8 @@ MODULES: list = [
     PercentageMetric(
         id="saf_co2_cuts",
         label="SAF CO2 Cuts (%)",
-        impact_at_0=_BASE,
-        impact_at_100=rate(climate="High", financial="Low", time="Medium"),  # TODO
+        impact_at_0=rate(climate="Low", financial="Very High", time="High"),
+        impact_at_100=rate(climate="High", financial="Very Low", time="High"),
         default_pct=50.0,
     ),
 
@@ -41,8 +41,8 @@ MODULES: list = [
     PercentageMetric(
         id="saf_time_to_100",
         label="Time to 100% SAF (% vol)",
-        impact_at_0=_BASE,
-        impact_at_100=_TODO,  # TODO
+        impact_at_0=rate(climate="Very Low", financial="Medium", time="Very Low"),
+        impact_at_100=rate(climate="Very High", financial="Medium", time="Very High"),
         default_pct=50.0,
     ),
 
@@ -50,8 +50,8 @@ MODULES: list = [
     PercentageMetric(
         id="saf_WTC",
         label="Willingness to contribute financially (% premium accepted)",
-        impact_at_0=_BASE,
-        impact_at_100=_TODO,  # TODO
+        impact_at_0=rate(climate="Low", financial="Low"),
+        impact_at_100=rate(climate="High", financial="High"),
         default_pct=50.0,
     ),
 
@@ -61,16 +61,16 @@ MODULES: list = [
     LevelMetric(
         id="biosensor_maintenance",
         label="System Maintenance Effort",
-        impact_at_min=_BASE,
-        impact_at_max=_TODO,  # TODO
+        impact_at_min=rate(climate="Very Low", financial="Low"),
+        impact_at_max=rate(climate="Very High", financial="High"),
     ),
 
     # MOD 05 - Reliability gain vs. current sensors - Bio-Sensors
     PercentageMetric(
         id="biosensor_reliability",
         label="Reliability Gain vs. Current Sensors (% more reliable)",
-        impact_at_0=_BASE,
-        impact_at_100=_TODO,  # TODO
+        impact_at_0=rate(climate="Very Low", financial="Very Low", time="High"),
+        impact_at_100=rate(climate="Very High", financial="Very High", time="Low"),
         default_pct=50.0,
     ),
 
@@ -78,16 +78,16 @@ MODULES: list = [
     LevelMetric(
         id="biosensor_certification",
         label="Certification Support",
-        impact_at_min=_BASE,
-        impact_at_max=_TODO,  # TODO
+        impact_at_min=rate(climate="Very Low", time="Very Low"),
+        impact_at_max=rate(climate="Very High", time="Very High"),
     ),
 
     # MOD 07 - Data Depth - Digital Passport
     PercentageMetric(
         id="passport_digital_depth",
         label="Digital Depth (%)",
-        impact_at_0=_BASE,
-        impact_at_100=_TODO,  # TODO
+        impact_at_0=rate(climate="Low", financial="High", time="Low"),
+        impact_at_100=rate(climate="High", financial="Medium", time="High"),
         default_pct=50.0,
     ),
 
@@ -95,16 +95,16 @@ MODULES: list = [
     LevelMetric(
         id="passport_reg_support",
         label="Regulatory Support",
-        impact_at_min=_BASE,
-        impact_at_max=_TODO,  # TODO
+        impact_at_min=rate(climate="Medium", financial="Very Low", time="Very Low"),
+        impact_at_max=rate(climate="High", financial="Very High", time="Very High"),
     ),
 
     # MOD 09 - Industry Adoption - Materials Digital Passport
     LevelMetric(
         id="passport_adoption",
         label="Industry Adoption",
-        impact_at_min=_BASE,
-        impact_at_max=_TODO,  # TODO
+        impact_at_min=rate(climate="Low", financial="Low", time="Very Low"),
+        impact_at_max=rate(climate="High", financial="High", time="Very High"),
     ),
 
     # MOD 10 - Funding payback period — REMOVED: replaced by MOD 19 (funding_split)
@@ -114,24 +114,24 @@ MODULES: list = [
     LevelMetric(
         id="EGE_participation",
         label="Global Participation (incl. Eco-labels)",
-        impact_at_min=_BASE,
-        impact_at_max=_TODO,  # TODO
+        impact_at_min=rate(climate="Very Low", financial="Very Low", time="Very High"),
+        impact_at_max=rate(climate="Very High", financial="Very High", time="Very Low"),
     ),
 
     # MOD 12 - Market trust in label - Emission Guide & Eco-label
     LevelMetric(
         id="EGE_market_trust",
         label="Market Trust in Label",
-        impact_at_min=_BASE,
-        impact_at_max=_TODO,  # TODO
+        impact_at_min=rate(climate="Low", time="Very Low"),
+        impact_at_max=rate(climate="High", time="Very High"),
     ),
 
     # MOD 13 - Sustainability mode shift - Transport of Aircraft Elements
     PercentageMetric(
         id="transport_mode_shift",
         label="Shift to Low Climate, Resource, and Air-Quality Impact Modes (%)",
-        impact_at_0=_BASE,
-        impact_at_100=_TODO,  # TODO
+        impact_at_0=rate(climate="Very Low", financial="Very Low", time="Very Low"),
+        impact_at_100=rate(climate="Very High", financial="Very High", time="Very High"),
         default_pct=50.0,
     ),
 
@@ -139,8 +139,8 @@ MODULES: list = [
     PercentageMetric(
         id="transport_carbon_tax",
         label="Carbon Tax (%)",
-        impact_at_0=_BASE,
-        impact_at_100=_TODO,  # TODO
+        impact_at_0=rate(climate="Low", financial="Low", time="Very High"),
+        impact_at_100=rate(climate="High", financial="High", time="Very Low"),
         default_pct=50.0,
     ),
 
@@ -148,8 +148,8 @@ MODULES: list = [
     LevelMetric(
         id="transport_buffer",
         label="Schedule Buffer",
-        impact_at_min=_BASE,
-        impact_at_max=_TODO,  # TODO
+        impact_at_min=rate(climate="Very Low", time="High"),
+        impact_at_max=rate(climate="High", time="Low"),
     ),
 
     # MOD 16a - Mandates vs. incentives - Next Gen Roadmapping
@@ -158,8 +158,8 @@ MODULES: list = [
         label="Policy instrument",
         options={
             "None": _BASE,
-            "Incentive": _TODO,  # TODO
-            "Mandate": _TODO,    # TODO
+            "Incentive": rate(climate="Medium", financial="Low", time="High"),
+            "Mandate": rate(climate="High", financial="Medium", time="Low"),
         },
         default_option="None",
     ),
@@ -168,8 +168,8 @@ MODULES: list = [
     PercentageMetric(
         id="nextgen_decarb_commitment",
         label="Decarbonisation Commitment by Stakeholders (%)",
-        impact_at_0=_BASE,
-        impact_at_100=_TODO,  # TODO
+        impact_at_0=rate(climate="Very Low", financial="Very High"),
+        impact_at_100=rate(climate="Very High", financial="Very Low"),
         default_pct=50.0,
     ),
 
@@ -177,8 +177,8 @@ MODULES: list = [
     PercentageMetric(
         id="nextgen_tech_priority",
         label="Priority on New Technology Notification (%)",
-        impact_at_0=_BASE,
-        impact_at_100=_TODO,  # TODO
+        impact_at_0=rate(climate="Very Low", financial="Very High", time="Very High"),
+        impact_at_100=rate(climate="Very High", financial="Very Low", time="Very Low"),
         default_pct=50.0,
     ),
 
@@ -187,9 +187,9 @@ MODULES: list = [
         id="nextgen_tech_toggle",
         label="Priority on New Technology Notification",
         options={
-            "SAF": _TODO,       # TODO
-            "H2": _TODO,        # TODO
-            "Electric": _TODO,  # TODO
+            "SAF": rate(climate="Medium", financial="High", time="High"),
+            "H2": rate(climate="Very High", financial="Medium", time="Low"),
+            "Electric": rate(climate="Very High", financial="Medium", time="Low"),
             "Other": _BASE,
         },
         default_option="SAF",
@@ -200,9 +200,9 @@ MODULES: list = [
         id="nextgen_actions",
         label="Actions Needed by Stakeholder",
         options={
-            "Airlines": _TODO,     # TODO
-            "OEMs": _TODO,         # TODO
-            "Government": _TODO,   # TODO
+            "Airlines": rate(climate="Low", financial="Low", time="High"),
+            "OEMs": rate(climate="High", financial="Low", time="High"),
+            "Government": rate(climate="High", financial="High", time="Low"),
             "Other": _BASE,
         },
         default_option="Airlines",
