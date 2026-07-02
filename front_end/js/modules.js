@@ -4,25 +4,25 @@
  * ┌─────────────────────────────────────────────────────────────────────────┐
  * │  ✏️  THE ONLY FILE YOU NEED TO EDIT TO TUNE THE GAME.                    │
  * │                                                                         │
- * │  Every rating below is a PLACEHOLDER marked // TODO — exactly like the  │
- * │  # TODO markers in back_end/modules.py. Fill them in the same way:      │
+ * │  Ratings use rate(climate, financial, time) — POSITIONAL, unlike the    │
+ * │  Python file which allows keywords. Same values, different syntax:      │
  * │                                                                         │
- * │      rate("High", "Low", "Medium")                                      │
- * │            │       │       └── time      (Very High = fastest payoff)   │
- * │            │       └────────── financial (higher = better financially)  │
- * │            └────────────────── climate   (higher = better for climate)  │
+ * │      Python:  impact_at_0=rate(climate="Low", financial="Very High")    │
+ * │      JS:      impact_at_0: rate("Low", "Very High"),                    │
  * │                                                                         │
+ * │  Order is always climate, financial, time. Leave a trailing dimension   │
+ * │  out (or pass null) to mark it "not applicable".                        │
  * │  Scale: "Very Low" 0 · "Low" 25 · "Medium" 50 · "High" 75 ·             │
- * │         "Very High" 100 — or any raw 0-100 number, or null = N/A.       │
+ * │         "Very High" 100 — or any raw 0-100 number.                      │
+ * │  Note the ':' after each property name — '=' breaks JavaScript.         │
  * │  Keep this file and back_end/modules.py in sync.                        │
  * └─────────────────────────────────────────────────────────────────────────┘
  * ========================================================================== */
 
 "use strict";
 
-// Handy placeholders. Replace per-dimension as you go.
+// Baseline used by the "None"/"Other" options.
 const _BASE = rate("Very Low", "Very Low", "Very Low");   // a 'do nothing' low end
-const _TODO = rate("Medium", "Medium", "Medium");          // TODO: set real high-end ratings
 
 const MODULES = [
 
@@ -30,8 +30,8 @@ const MODULES = [
   new PercentageMetric({
     id: "saf_co2_cuts",
     label: "SAF CO2 Cuts (%)",
-    impact_at_0=rate(climate="Low", financial="Very High", time="High"),
-    impact_at_100=rate(climate="High", financial="Very Low", time="High"),
+    impact_at_0: rate("Low", "Very High", "High"),
+    impact_at_100: rate("High", "Very Low", "High"),
     default_pct: 50.0,
   }),
 
@@ -39,8 +39,8 @@ const MODULES = [
   new PercentageMetric({
     id: "saf_time_to_100",
     label: "Time to 100% SAF (% vol)",
-    impact_at_0=rate(climate="Very Low", financial="Medium", time="Very Low"),
-    impact_at_100=rate(climate="Very High", financial="Medium", time="Very High"),
+    impact_at_0: rate("Very Low", "Medium", "Very Low"),
+    impact_at_100: rate("Very High", "Medium", "Very High"),
     default_pct: 50.0,
   }),
 
@@ -48,8 +48,8 @@ const MODULES = [
   new PercentageMetric({
     id: "saf_WTC",
     label: "Willingness to contribute financially (% premium accepted)",
-    impact_at_0=rate(climate="Low", financial="Low"),
-    impact_at_100=rate(climate="High", financial="High"),
+    impact_at_0: rate("Low", "Low"),          // time not applicable
+    impact_at_100: rate("High", "High"),      // time not applicable
     default_pct: 50.0,
   }),
 
@@ -59,16 +59,16 @@ const MODULES = [
   new LevelMetric({
     id: "biosensor_maintenance",
     label: "System Maintenance Effort",
-    impact_at_min=rate(climate="Very Low", financial="Low"),
-    impact_at_max=rate(climate="Very High", financial="High"),
+    impact_at_min: rate("Very Low", "Low"),   // time not applicable
+    impact_at_max: rate("Very High", "High"), // time not applicable
   }),
 
   // MOD 05 - Reliability gain vs. current sensors - Bio-Sensors
   new PercentageMetric({
     id: "biosensor_reliability",
     label: "Reliability Gain vs. Current Sensors (% more reliable)",
-    impact_at_0=rate(climate="Very Low", financial="Very Low", time="High"),
-    impact_at_100=rate(climate="Very High", financial="Very High", time="Low"),
+    impact_at_0: rate("Very Low", "Very Low", "High"),
+    impact_at_100: rate("Very High", "Very High", "Low"),
     default_pct: 50.0,
   }),
 
@@ -76,16 +76,16 @@ const MODULES = [
   new LevelMetric({
     id: "biosensor_certification",
     label: "Certification Support",
-    impact_at_min=rate(climate="Very Low", time="Very Low"),
-    impact_at_max=rate(climate="Very High", time="Very High"),
+    impact_at_min: rate("Very Low", null, "Very Low"),   // financial not applicable
+    impact_at_max: rate("Very High", null, "Very High"), // financial not applicable
   }),
 
   // MOD 07 - Data Depth - Digital Passport
   new PercentageMetric({
     id: "passport_digital_depth",
     label: "Digital Depth (%)",
-    impact_at_0=rate(climate="Low", financial="High", time="Low"),
-    impact_at_100=rate(climate="High", financial="Medium", time="High"),
+    impact_at_0: rate("Low", "High", "Low"),
+    impact_at_100: rate("High", "Medium", "High"),
     default_pct: 50.0,
   }),
 
@@ -93,16 +93,16 @@ const MODULES = [
   new LevelMetric({
     id: "passport_reg_support",
     label: "Regulatory Support",
-    impact_at_min=rate(climate="Medium", financial="Very Low", time="Very Low"),
-    impact_at_max=rate(climate="High", financial="Very High", time="Very High"),
+    impact_at_min: rate("Medium", "Very Low", "Very Low"),
+    impact_at_max: rate("High", "Very High", "Very High"),
   }),
 
   // MOD 09 - Industry Adoption - Materials Digital Passport
   new LevelMetric({
     id: "passport_adoption",
     label: "Industry Adoption",
-    impact_at_min=rate(climate="Low", financial="Low", time="Very Low"),
-    impact_at_max=rate(climate="High", financial="High", time="Very High"),
+    impact_at_min: rate("Low", "Low", "Very Low"),
+    impact_at_max: rate("High", "High", "Very High"),
   }),
 
   // MOD 10 - Funding payback period — REMOVED: replaced by MOD 19 (funding_split)
@@ -112,33 +112,33 @@ const MODULES = [
   new LevelMetric({
     id: "EGE_participation",
     label: "Global Participation (incl. Eco-labels)",
-    impact_at_min=rate(climate="Very Low", financial="Very Low", time="Very High"),
-    impact_at_max=rate(climate="Very High", financial="Very High", time="Very Low"),
+    impact_at_min: rate("Very Low", "Very Low", "Very High"),
+    impact_at_max: rate("Very High", "Very High", "Very Low"),
   }),
 
   // MOD 12 - Market trust in label - Emission Guide & Eco-label
   new LevelMetric({
     id: "EGE_market_trust",
     label: "Market Trust in Label",
-    impact_at_min=rate(climate="Low", time="Very Low"),
-    impact_at_max=rate(climate="High", time="Very High"),
+    impact_at_min: rate("Low", null, "Very Low"),   // financial not applicable
+    impact_at_max: rate("High", null, "Very High"), // financial not applicable
   }),
 
   // MOD 13 - Sustainability mode shift - Transport of Aircraft Elements
   new PercentageMetric({
     id: "transport_mode_shift",
     label: "Shift to Low Climate, Resource, and Air-Quality Impact Modes (%)",
-    impact_at_0=rate(climate="Very Low", financial="Very Low", time="Very Low"),
-    impact_at_100=rate(climate="Very High", financial="Very High", time="Very High"),    
+    impact_at_0: rate("Very Low", "Very Low", "Very Low"),
+    impact_at_100: rate("Very High", "Very High", "Very High"),
     default_pct: 50.0,
   }),
 
   // MOD 14 - Carbon tax - Transport of Aircraft Elements
   new PercentageMetric({
     id: "transport_carbon_tax",
-    label: "Carbon Tax (Euro/tonne)",
-    impact_at_0=rate(climate="Low", financial="Low", time="Very High"),
-    impact_at_100=rate(climate="High", financial="High", time="Very Low"),    
+    label: "Carbon Tax (%)",
+    impact_at_0: rate("Low", "Low", "Very High"),
+    impact_at_100: rate("High", "High", "Very Low"),
     default_pct: 50.0,
   }),
 
@@ -146,8 +146,8 @@ const MODULES = [
   new LevelMetric({
     id: "transport_buffer",
     label: "Schedule Buffer",
-    impact_at_min=rate(climate="Very Low", time="High"),
-    impact_at_max=rate(climate="High", time="Low"),
+    impact_at_min: rate("Very Low", null, "High"),  // financial not applicable
+    impact_at_max: rate("High", null, "Low"),       // financial not applicable
   }),
 
   // MOD 16a - Mandates vs. incentives - Next Gen Roadmapping
@@ -156,8 +156,8 @@ const MODULES = [
     label: "Policy instrument",
     options: {
       "None": _BASE,
-      "Incentive": rate(climate="Medium", financial="Low", time="High"),
-      "Mandate": rate(climate="High", financial="Medium", time="Low"),
+      "Incentive": rate("Medium", "Low", "High"),
+      "Mandate": rate("High", "Medium", "Low"),
     },
     default_option: "None",
   }),
@@ -166,8 +166,8 @@ const MODULES = [
   new PercentageMetric({
     id: "nextgen_decarb_commitment",
     label: "Decarbonisation Commitment by Stakeholders (%)",
-    impact_at_0=rate(climate="Very Low", financial="Very High"),
-    impact_at_100=rate(climate="Very High", financial="Very Low"),
+    impact_at_0: rate("Very Low", "Very High"),   // time not applicable
+    impact_at_100: rate("Very High", "Very Low"), // time not applicable
     default_pct: 50.0,
   }),
 
@@ -175,8 +175,8 @@ const MODULES = [
   new PercentageMetric({
     id: "nextgen_tech_priority",
     label: "Priority on New Technology Notification (%)",
-    impact_at_0=rate(climate="Very Low", financial="Very High", time="Very High"),
-    impact_at_100=rate(climate="Very High", financial="Very Low", time="Very Low"),
+    impact_at_0: rate("Very Low", "Very High", "Very High"),
+    impact_at_100: rate("Very High", "Very Low", "Very Low"),
     default_pct: 50.0,
   }),
 
@@ -185,9 +185,9 @@ const MODULES = [
     id: "nextgen_tech_toggle",
     label: "Priority on New Technology Notification",
     options: {
-      "SAF": rate(climate="Medium", financial="High", time="High"),
-      "H2": rate(climate="Very High", financial="Medium", time="Low"),
-      "Electric": rate(climate="Very High", financial="Medium", time="Low"),
+      "SAF": rate("Medium", "High", "High"),
+      "H2": rate("Very High", "Medium", "Low"),
+      "Electric": rate("Very High", "Medium", "Low"),
       "Other": _BASE,
     },
     default_option: "SAF",
@@ -198,25 +198,25 @@ const MODULES = [
     id: "nextgen_actions",
     label: "Actions Needed by Stakeholder",
     options: {
-      "Airlines": rate(climate="Low", financial="Low", time="High"),
-      "OEMs": rate(climate="High", financial="Low", time="High"),
-      "Government": rate(climate="High", financial="High", time="Low"),
+      "Airlines": rate("Low", "Low", "High"),
+      "OEMs": rate("High", "Low", "High"),
+      "Government": rate("High", "High", "Low"),
       "Other": _BASE,
     },
     default_option: "Airlines",
   }),
 
-  // MOD 19 - Funding by Stakeholder (replaces MOD 10 in Emission Guide & Eco-Label)
+  // MOD 19 - Funding by Stakeholder - Extra
   // Shares must sum to 100%. Climate-neutral: only financial & time are rated,
-  // so climate is omitted (null / not applicable) for every group. TODO: tune ratings.
+  // so climate is omitted (null / not applicable) for every group.
   new AllocationMetric({
     id: "funding_split",
     label: "Who pays for the transition",
     groups: {
-      "Government": rate(null, "Medium", "High"),   // TODO
-      "Private":    rate(null, "High",   "Low"),    // TODO
-      "NGO":        rate(null, "Low",    "Medium"), // TODO
-      "Public":     rate(null, "Low",    "Medium"), // TODO
+      "Government": rate(null, "Medium", "High"),
+      "Private":    rate(null, "High",   "Low"),
+      "NGO":        rate(null, "Low",    "Medium"),
+      "Public":     rate(null, "Low",    "Medium"),
     },
     default_allocation: { "Government": 25, "Private": 25, "NGO": 25, "Public": 25 },
   }),
