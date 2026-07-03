@@ -30,8 +30,8 @@ const MODULES = [
   new PercentageMetric({
     id: "saf_co2_cuts",
     label: "SAF CO2 Cuts (%)",
-    impact_at_0: rate("Low", "Very High", "High"),
-    impact_at_100: rate("High", "Very Low", "High"),
+    impact_at_0: rate("Low", "Very High"),    // time not applicable
+    impact_at_100: rate("Very High", "Medium"),  // time not applicable
     default_pct: 50.0,
   }),
 
@@ -137,8 +137,8 @@ const MODULES = [
   new PercentageMetric({
     id: "transport_carbon_tax",
     label: "Carbon Tax (%)",
-    impact_at_0: rate("Low", "Low", "Very High"),
-    impact_at_100: rate("High", "High", "Very Low"),
+    impact_at_0: rate("Low", "High", "Very High"),
+    impact_at_100: rate("High", "Low", "Very Low"),
     default_pct: 50.0,
   }),
 
@@ -166,8 +166,8 @@ const MODULES = [
   new PercentageMetric({
     id: "nextgen_decarb_commitment",
     label: "Decarbonisation Commitment by Stakeholders (%)",
-    impact_at_0: rate("Very Low", "Very High"),   // time not applicable
-    impact_at_100: rate("Very High", "Very Low"), // time not applicable
+    impact_at_0: rate("Very Low", "High"),      // time not applicable
+    impact_at_100: rate("Very High", "Medium"), // time not applicable
     default_pct: 50.0,
   }),
 

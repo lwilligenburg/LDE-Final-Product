@@ -32,8 +32,8 @@ MODULES: list = [
     PercentageMetric(
         id="saf_co2_cuts",
         label="SAF CO2 Cuts (%)",
-        impact_at_0=rate(climate="Low", financial="Very High", time="High"),
-        impact_at_100=rate(climate="High", financial="Very Low", time="High"),
+        impact_at_0=rate(climate="Low", financial="Very High"),  # time not applicable
+        impact_at_100=rate(climate="Very High", financial="Medium"),  # time not applicable
         default_pct=50.0,
     ),
 
@@ -139,8 +139,8 @@ MODULES: list = [
     PercentageMetric(
         id="transport_carbon_tax",
         label="Carbon Tax (%)",
-        impact_at_0=rate(climate="Low", financial="Low", time="Very High"),
-        impact_at_100=rate(climate="High", financial="High", time="Very Low"),
+        impact_at_0=rate(climate="Low", financial="High", time="Very High"),
+        impact_at_100=rate(climate="High", financial="Low", time="Very Low"),
         default_pct=50.0,
     ),
 
@@ -168,8 +168,8 @@ MODULES: list = [
     PercentageMetric(
         id="nextgen_decarb_commitment",
         label="Decarbonisation Commitment by Stakeholders (%)",
-        impact_at_0=rate(climate="Very Low", financial="Very High"),
-        impact_at_100=rate(climate="Very High", financial="Very Low"),
+        impact_at_0=rate(climate="Very Low", financial="High"),
+        impact_at_100=rate(climate="Very High", financial="Medium"),
         default_pct=50.0,
     ),
 
