@@ -197,6 +197,18 @@ html, body {
   box-shadow: inset 0 0 0 4px var(--blue);
 }
 
+/* combo boxes (two controls stacked, e.g. Next-Gen MOD 16a+b / 17a+b) */
+.q-box.combo { justify-content: space-between; }
+.q-box.combo .q-label { min-height: 0; margin-bottom: 4px; }
+.q-box.combo .choice-group, .q-box.combo .slider-wrap { margin-top: 0; }
+.q-box.combo .choice-group.compact .choice-btn {
+  min-width: 76px; padding: 8px 10px;      /* slightly less tall, per design */
+  font-size: 18px; border-radius: 10px;
+}
+.q-box.combo .choice-group.compact .choice-btn.sel { box-shadow: inset 0 0 0 3px var(--blue); }
+.q-box.combo .slider { height: 28px; border-radius: 14px; }
+.q-box.combo .slider-ends { font-size: 18px; margin-bottom: 4px; }
+
 /* ------------------------------- sidebar -------------------------------- */
 
 #sidebar-top {

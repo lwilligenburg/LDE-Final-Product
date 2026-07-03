@@ -89,7 +89,7 @@ const EXPLANATIONS = {
   // MOD 16 — one explanation covers the whole Mandate↔Incentive slider
   // (both nextgen_decarb_commitment and nextgen_policy_instrument).
   nextgen_decarb_commitment: {
-    question: "The extent to which a decarbonisation measure is binding (0 = mandate, 100 = proactive stakeholder commitment / incentive).",
+    question: "Choose the policy instrument with the buttons (Mandate = binding, Incentive = encouraging proactive mitigation), and set the extent of the stakeholders' decarbonisation commitment with the slider (0–100).",
     impact: "Sustainability: A higher share of mandates forces more consistent and widespread adoption of decarbonisation measures, delivering greater emissions reductions. A higher share of stakeholder commitment relies more on voluntary action.\n\nROI: Mandates provide investment certainty. Stakeholder commitment allows organisations to align investments with their own business strategy, potentially improving cost-effectiveness while reducing regulatory burden.\n\nTime: Stakeholder commitments can often be implemented immediately, whereas mandates generally require potentially longer legislative and implementation processes.",
   },
   nextgen_policy_instrument: {
@@ -99,7 +99,7 @@ const EXPLANATIONS = {
   // MOD 17 — one explanation covers the fuel-system choice
   // (both nextgen_tech_toggle and nextgen_tech_priority).
   nextgen_tech_toggle: {
-    question: "The priority given to different technologies: SAF, hydrogen-powered aircraft, electric aircraft, and others.",
+    question: "The priority given to different technologies: SAF, hydrogen-powered aircraft, electric aircraft, and others. Set how much priority with the slider (0–100) and pick which technology with the buttons.",
     impact: "Sustainability: A higher share of hydrogen and/or electric aircraft has the potential to achieve the greatest long-term CO₂ reductions (provided low-carbon electricity and hydrogen are available). A higher share of SAF delivers immediate lifecycle emissions reductions using existing aircraft but generally offers lower long-term decarbonisation potential.\n\nROI: SAF requires limited fleet and infrastructure changes but involves high fuel costs. Hydrogen and electric aircraft require significant upfront investments in aircraft and infrastructure but may reduce operating costs over time.\n\nTime: SAF can be deployed immediately using existing fleets, whereas hydrogen and electric aircraft depend on technology maturity, certification, and infrastructure development, making large-scale deployment a longer-term transition.",
   },
   nextgen_tech_priority: {

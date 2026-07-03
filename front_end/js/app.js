@@ -5,10 +5,11 @@
  * Question → metric mapping (agreed design):
  *   T1 SAF        : saf_co2_cuts · saf_time_to_100 · saf_WTC
  *   T2 Passport   : passport_digital_depth · passport_reg_support · passport_adoption
- *   T3 Next-Gen   : slider drives BOTH nextgen_decarb_commitment (value) and
- *                   nextgen_policy_instrument (<50 → Mandate, ≥50 → Incentive);
- *                   fuel choice → nextgen_tech_toggle (+ nextgen_tech_priority = 100);
- *                   actions → nextgen_actions
+ *   T3 Next-Gen   : MOD 16a Mandate/Incentive buttons → nextgen_policy_instrument;
+ *                   MOD 16b 0-100 slider → nextgen_decarb_commitment;
+ *                   MOD 17a 0-100 slider → nextgen_tech_priority;
+ *                   MOD 17b SAF/H2/Electric buttons → nextgen_tech_toggle;
+ *                   MOD 18 actions → nextgen_actions
  *   T4 Transport  : transport_mode_shift · transport_carbon_tax · transport_buffer
  *   T5 Bio-Sensors: biosensor_maintenance · biosensor_reliability · biosensor_certification
  *   T6 Emission   : funding choice → funding_split (chosen group 100%, rest 0) [MOD 19]
@@ -50,8 +51,17 @@ const TOPICS = [
     id: "roadmap", title: "Next-Gen Roadmapping", tagline: "Planning tomorrow's aviation path",
     icon: "assets/icon_roadmap.png",
     questions: [
-      { type: "slider", label: "Mandates vs Incentives\n(Decarbonisation commitment)", min: "Mandate", max: "Incentive", metric: "nextgen_decarb_commitment", special: "policy" },
-      { type: "choice", label: "Priority on new fuel system\n(SAF/H2/Electric)", options: ["SAF", "H2", "Electric"], metric: "nextgen_tech_toggle", special: "tech" },
+      // MOD 16a (buttons) + MOD 16b (slider) share one box
+      { type: "combo", label: "Mandates vs Incentives\n(Decarbonisation commitment)", parts: [
+        { type: "choice", options: ["Mandate", "Incentive"], metric: "nextgen_policy_instrument" },
+        { type: "slider", min: "0", max: "100", metric: "nextgen_decarb_commitment" },
+      ]},
+      // MOD 17a (slider) + MOD 17b (buttons) share one box
+      { type: "combo", label: "Priority on new fuel system\n(SAF/H2/Electric)", parts: [
+        { type: "slider", min: "0", max: "100", metric: "nextgen_tech_priority" },
+        { type: "choice", options: ["SAF", "H2", "Electric"], metric: "nextgen_tech_toggle" },
+      ]},
+      // MOD 18
       { type: "choice", label: "Who's actions needed", options: ["Airline", "OEM", "Government"], metric: "nextgen_actions", map: { "Airline": "Airlines", "OEM": "OEMs", "Government": "Government" } },
     ],
   },
@@ -100,10 +110,16 @@ const PHRASES = {
 
 const sim = buildSimulation();
 
+function initialAnswer(q) {
+  if (q.type === "combo") return q.parts.map(p => (p.type === "slider" ? 0 : null));
+  return q.type === "slider" ? 0 : null;
+}
+function initAnswers() { return TOPICS.map(t => t.questions.map(initialAnswer)); }
+
 const state = {
   mode: "home",          // home | intro | topic | ready | results
   openTopic: null,       // index of the topic panel currently open
-  answers: TOPICS.map(t => t.questions.map(q => (q.type === "slider" ? 0 : null))),
+  answers: initAnswers(),
   completed: TOPICS.map(() => false),
   result: null,
 };
@@ -123,12 +139,8 @@ function collectChoices() {
   TOPICS.forEach((topic, ti) => {
     topic.questions.forEach((q, qi) => {
       const a = state.answers[ti][qi];
-      if (q.special === "policy") {
-        choices["nextgen_decarb_commitment"] = a;
-        choices["nextgen_policy_instrument"] = a < 50 ? "Mandate" : "Incentive";
-      } else if (q.special === "tech") {
-        choices["nextgen_tech_toggle"] = a;
-        choices["nextgen_tech_priority"] = 100; // full priority to the chosen tech (tunable)
+      if (q.type === "combo") {
+        q.parts.forEach((p, pi) => { choices[p.metric] = a[pi]; }); // direct per-part mapping
       } else if (q.special === "funding") {
         const split = { "Government": 0, "Private": 0, "NGO": 0, "Public": 0 };
         split[a] = 100;
@@ -177,10 +189,9 @@ function personaFor(r) {
 
 /* ------------------------------ help bubbles ---------------------------- */
 
-// Which metric ids a question drives (some questions drive two modules).
+// Which metric ids a question drives (combo questions drive one per part).
 function questionMetricIds(q) {
-  if (q.special === "policy") return ["nextgen_decarb_commitment", "nextgen_policy_instrument"];
-  if (q.special === "tech") return ["nextgen_tech_toggle", "nextgen_tech_priority"];
+  if (q.type === "combo") return q.parts.map(p => p.metric);
   return [q.metric];
 }
 
@@ -340,54 +351,75 @@ function renderCenter() {
   }
 }
 
+function buildSliderControl(getVal, setVal, minLab, maxLab) {
+  const wrap = el("div", "slider-wrap");
+  const ends = el("div", "slider-ends");
+  ends.appendChild(el("span", "", minLab));
+  const valueLab = el("span", "slider-value", "");
+  ends.appendChild(valueLab);
+  ends.appendChild(el("span", "", maxLab));
+  wrap.appendChild(ends);
+
+  const input = document.createElement("input");
+  input.type = "range"; input.min = 0; input.max = 100; input.step = 1;
+  input.value = getVal();
+  input.className = "slider";
+  const showVal = () => {
+    const v = Number(input.value);
+    valueLab.textContent = /^\d+$/.test(minLab) ? v : "";
+    input.style.setProperty("--fill", v + "%");
+  };
+  input.oninput = () => { setVal(Number(input.value)); showVal(); };
+  showVal();
+  wrap.appendChild(input);
+  return wrap;
+}
+
+function buildChoiceControl(options, getVal, setVal, compact) {
+  const group = el("div", "choice-group" + (compact ? " compact" : ""));
+  options.forEach(opt => {
+    const b = el("button", "choice-btn" + (getVal() === opt ? " sel" : ""), opt);
+    b.onclick = () => {
+      setVal(opt);
+      group.querySelectorAll(".choice-btn").forEach(x => x.classList.remove("sel"));
+      b.classList.add("sel");
+      updateNextBar();
+    };
+    group.appendChild(b);
+  });
+  return group;
+}
+
 function buildQuestionBox(ti, qi, q) {
-  const box = el("div", "q-box");
+  const box = el("div", "q-box" + (q.type === "combo" ? " combo" : ""));
   const help = helpButton(questionMetricIds(q), "question", "q-help");
   if (help) box.appendChild(help);
   box.appendChild(el("div", "q-label", q.label.replace(/\n/g, "<br>")));
 
-  if (q.type === "slider") {
-    const wrap = el("div", "slider-wrap");
-    const ends = el("div", "slider-ends");
-    ends.appendChild(el("span", "", q.min));
-    const valueLab = el("span", "slider-value", "");
-    ends.appendChild(valueLab);
-    ends.appendChild(el("span", "", q.max));
-    wrap.appendChild(ends);
-
-    const input = document.createElement("input");
-    input.type = "range"; input.min = 0; input.max = 100; input.step = 1;
-    input.value = state.answers[ti][qi];
-    input.className = "slider";
-    const showVal = () => {
-      const v = Number(input.value);
-      valueLab.textContent = /^\d+$/.test(q.min) ? v : ""; // numeric sliders show the value
-      input.style.setProperty("--fill", v + "%");
-    };
-    input.oninput = () => { state.answers[ti][qi] = Number(input.value); showVal(); };
-    showVal();
-    wrap.appendChild(input);
-    box.appendChild(wrap);
-  } else {
-    const group = el("div", "choice-group");
-    q.options.forEach(opt => {
-      const b = el("button", "choice-btn" + (state.answers[ti][qi] === opt ? " sel" : ""), opt);
-      b.onclick = () => {
-        state.answers[ti][qi] = opt;
-        group.querySelectorAll(".choice-btn").forEach(x => x.classList.remove("sel"));
-        b.classList.add("sel");
-        updateNextBar();
-      };
-      group.appendChild(b);
+  if (q.type === "combo") {
+    q.parts.forEach((p, pi) => {
+      const getVal = () => state.answers[ti][qi][pi];
+      const setVal = v => { state.answers[ti][qi][pi] = v; };
+      box.appendChild(p.type === "slider"
+        ? buildSliderControl(getVal, setVal, p.min, p.max)
+        : buildChoiceControl(p.options, getVal, setVal, true));
     });
-    box.appendChild(group);
+  } else if (q.type === "slider") {
+    box.appendChild(buildSliderControl(
+      () => state.answers[ti][qi], v => { state.answers[ti][qi] = v; }, q.min, q.max));
+  } else {
+    box.appendChild(buildChoiceControl(
+      q.options, () => state.answers[ti][qi], v => { state.answers[ti][qi] = v; }, false));
   }
   return box;
 }
 
 function topicAnswered(ti) {
-  return TOPICS[ti].questions.every((q, qi) =>
-    q.type === "slider" ? true : state.answers[ti][qi] !== null);
+  return TOPICS[ti].questions.every((q, qi) => {
+    const a = state.answers[ti][qi];
+    if (q.type === "combo") return q.parts.every((p, pi) => p.type === "slider" || a[pi] !== null);
+    return q.type === "slider" ? true : a !== null;
+  });
 }
 
 function updateNextBar() {
@@ -468,7 +500,7 @@ function startPlay() {
 }
 
 function resetPlay() {
-  state.answers = TOPICS.map(t => t.questions.map(q => (q.type === "slider" ? 0 : null)));
+  state.answers = initAnswers();
   state.completed = TOPICS.map(() => false);
   state.result = null;
   state.openTopic = null;
@@ -521,8 +553,9 @@ function renderBreakdown() {
     card.appendChild(el("div", "bd-title", topic.title));
     topic.questions.forEach((q, qi) => {
       const a = state.answers[ti][qi];
-      const shown = q.type === "slider" && /^\d+$/.test(q.min) ? a + "%" :
-                    q.special === "policy" ? `${a} (${a < 50 ? "Mandate" : "Incentive"} side)` : a;
+      const shown = q.type === "combo"
+        ? q.parts.map((p, pi) => (p.type === "slider" ? a[pi] + "%" : a[pi])).join(" · ")
+        : (q.type === "slider" && /^\d+$/.test(q.min) ? a + "%" : a);
       const ids = questionMetricIds(q);
       const line = el("div", "bd-q");
       line.appendChild(el("div", "bd-qlabel", `${q.label.split("\n")[0]} — <b>${shown}</b>`));
