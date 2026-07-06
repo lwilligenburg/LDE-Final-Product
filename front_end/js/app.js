@@ -297,7 +297,14 @@ function renderCenter() {
   c.innerHTML = "";
 
   if (state.mode === "home") {
-    c.appendChild(el("div", "title-panel"));
+    const panel = el("div", "title-panel");
+    panel.appendChild(Object.assign(document.createElement("img"), {
+      src: "assets/title_content.png",
+      alt: "Sustainable Aviation: Wings of the Future",
+    }));
+    panel.appendChild(el("div", "title-credit",
+      "Developed by Sudharshan SS &amp; Luke Willigenburg"));
+    c.appendChild(panel);
     return;
   }
 
